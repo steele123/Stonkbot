@@ -99,9 +99,45 @@ namespace Stonkbot.Modules
 
         [Command("sell")]
         [Summary("Submits a sell order on a certain security")]
-        public async Task SellCommand()
+        public async Task SellCommand(string ticker, int quantity)
         {
+            ticker = ticker.ToUpper();
 
+            var response = await _cloudClient.StockPrices.PriceAsync(ticker);
+
+            var builder = new EmbedBuilder();
+
+            if (response.ErrorMessage != null)
+            {
+                builder = builder.ToStockTickerError(ticker);
+                await ReplyAsync(embed: builder.Build());
+                return;
+            }
+
+            var user = await _manager.FindUserAndCreate(Context.User.Id);
+
+            if (user.stocks == null)
+            {
+                builder = builder.ToError("You do not have any stocks to sell");
+                await ReplyAsync(embed: builder.Build());
+                return;
+            }
+
+            var stock = new Stock {ticker = ticker};
+
+            if (!user.stocks.Contains(stock))
+            {
+                builder = builder.ToError($"You do not have enough shares of '{ticker}'");
+            }
+            else
+            {
+                builder.Title = $"Sell Order For {ticker} Completed!";
+                builder.Description = $"You have sold {quantity} shares for {quantity * response.Data}";
+                user.stocks.Remove(stock);
+                await _manager.UpdateUser(user);
+            }
+
+            await ReplyAsync(embed: builder.Build());
         }
 
         [Command("quote")]
@@ -116,7 +152,7 @@ namespace Stonkbot.Modules
             {
                 builder.Title = $"Stock Quotes for {ticker}";
                 builder.Color = Color.DarkGreen;
-                builder.AddField("Extended Price", response.Data.extendedPrice);
+                builder.AddField("Extended Price", response.Data.extendedPrice, true);
                 builder.AddField("Change", response.Data.change, true);
                 builder.AddField("Change %", response.Data.changePercent, true);
                 builder.AddField("Volume", response.Data.avgTotalVolume, true);
