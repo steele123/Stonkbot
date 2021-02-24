@@ -32,29 +32,51 @@ namespace Stonkbot.Modules
             _cloudClient = cloudClient;
         }
 
-        [Command("portfolio")]
-        public async Task PortfolioCommand()
+        [Command("balance")]
+        public async Task BalanceCommand()
         {
-            EmbedBuilder builder = new EmbedBuilder {Title = "Your Portfolio"};
-
-            var user = await _manager.FindUser(Context.User.Id);
-            if (user == null)
-            {
-                await ReplyAsync(embed: builder.ToErrorEmbed("Couldn't find a portfolio for your account"));
-            }
-
 
         }
 
+        [Command("portfolio")]
+        public async Task PortfolioCommand()
+        {
+            var user = await _manager.FindUserAndCreate(Context.User.Id);
+
+            var builder = new EmbedBuilder();
+
+            builder.Title = "Your Portfolio";
+            builder.AddField("Account Balance", user.money, true);
+            builder.AddField("Highest Balance", user.highest, true);
+            builder.Color = Color.DarkGreen;
+            builder.Timestamp = DateTimeOffset.Now;
+
+            if (user.stocks != null)
+            {
+                foreach (var stock in user.stocks)
+                {
+                    builder.AddField(stock.ticker, stock.quantity * stock.price, true);
+                }
+            }
+
+            await ReplyAsync(embed: builder.Build());
+        }
+
         [Command("purchase")]
+        [Alias("buy")]
         [Summary("Purchases a certain quantity of shares of a security/stock.")]
         public async Task PurchaseCommand(string ticker, int quantity)
         {
+            ticker = ticker.ToUpper();
+
             var response = await _cloudClient.StockPrices.PriceAsync(ticker);
+
+            var builder = new EmbedBuilder();
 
             if (response == null)
             {
-                await ReplyAsync(embed: EmbedUtils.ErrorEmbed($"Could not find the stock ticker '{ticker}'!"));
+                builder.ToStockTickerError(ticker);
+                await ReplyAsync(embed: builder.Build());
                 return;
             }
 
@@ -62,13 +84,14 @@ namespace Stonkbot.Modules
 
             if (user.money < quantity * response.Data)
             {
-                await ReplyAsync(embed: EmbedUtils.ErrorEmbed(
-                    $"You don't have enough money to purchase {quantity} shares of {ticker.ToUpper()}."));
+                builder.ToError($"You don't have enough money to purchase {quantity} shares of {ticker.ToUpper()}.");
             }
             else
             {
-                await ReplyAsync(
-                    $"Your {quantity} shares of {ticker} have been purchased for {quantity * response.Data}!");
+                builder.Description =
+                    $"Your {quantity} shares of {ticker} have been purchased for {quantity * response.Data}!";
+                builder.Color = Color.DarkGreen;
+                builder.Title = $"Buy Order For {ticker} Completed!";
                 user.AddStock(new Stock{ticker = ticker, price = (float)response.Data, quantity = quantity});
                 await _manager.UpdateUser(user);
             }
@@ -84,7 +107,7 @@ namespace Stonkbot.Modules
 
             if (response.ErrorMessage == null)
             {
-                builder.Title = "";
+                builder.Title = "Success!";
                 builder.Color = Color.DarkGreen;
                 builder.Description = $"The current market price of {ticker.ToUpper()} is {response.Data}";
                 builder.Timestamp = DateTimeOffset.Now;
@@ -131,8 +154,11 @@ namespace Stonkbot.Modules
             }
             else
             {
+                var stockPrice = quantity * response.Data;
+                builder.Color = Color.DarkGreen;
                 builder.Title = $"Sell Order For {ticker} Completed!";
-                builder.Description = $"You have sold {quantity} shares for {quantity * response.Data}";
+                builder.Description = $"You have sold {quantity} shares for {stockPrice}";
+                user.money += stockPrice;
                 user.stocks.Remove(stock);
                 await _manager.UpdateUser(user);
             }
@@ -185,6 +211,7 @@ namespace Stonkbot.Modules
                 }
                 else
                 {
+                    builder.Title = $"Current Shares For {ticker}";
                     builder.Description = $"You currently have {stock.quantity} shares of {stock.ticker}!";
                     builder.Color = Color.DarkGreen;
                 }
