@@ -6,12 +6,13 @@ using Microsoft.Extensions.Configuration;
 
 namespace Stonkbot.Modules
 {
-    public class Help : ModuleBase<SocketCommandContext>
+    [Name("Help")]
+    public class HelpModule : ModuleBase<SocketCommandContext>
     {
         private readonly CommandService _service;
         private readonly IConfigurationRoot _config;
 
-        public Help(CommandService service, IConfigurationRoot config)
+        public HelpModule(CommandService service, IConfigurationRoot config)
         {
             _service = service;
             _config = config;

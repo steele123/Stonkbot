@@ -7,6 +7,7 @@ using Discord.WebSocket;
 using IEXSharp;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using MongoDB.Driver;
 using Stonkbot.Services;
 
 namespace Stonkbot
@@ -59,6 +60,7 @@ namespace Stonkbot
                     config["tokens:iex:secret"],
                     signRequest: false,
                     useSandBox: false))
+                .AddSingleton<DatabaseManager>(new DatabaseManager(config["mongodb"]))
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<StartupService>()
                 .AddSingleton<LoggingService>()
