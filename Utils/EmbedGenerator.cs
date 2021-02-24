@@ -28,6 +28,17 @@ namespace Stonkbot.Extensions
             };
         }
 
+        public static EmbedBuilder ToStockTickerError(this EmbedBuilder builder, string ticker)
+        {
+            return new()
+            {
+                Title = "Error",
+                Description = $"Couldn't find the stock ticker '{ticker.ToUpper()}'.",
+                Color = Color.Red,
+                Timestamp = DateTimeOffset.Now
+            };
+        }
+
         public static Embed ToErrorEmbed(this EmbedBuilder builder, string errorMessage)
         {
             builder = new EmbedBuilder()

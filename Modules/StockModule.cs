@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System;
+using System.Globalization;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -12,7 +13,7 @@ using Stonkbot.Services;
 
 namespace Stonkbot.Modules
 {
-    [Name(("Stocks"))]
+    [Name(("Stock Commands"))]
     public class StockModule : ModuleBase<SocketCommandContext>
     {
         private readonly CommandService _service;
@@ -81,15 +82,16 @@ namespace Stonkbot.Modules
 
             var builder = new EmbedBuilder();
 
-            if (response != null)
+            if (response.ErrorMessage == null)
             {
                 builder.Title = "";
                 builder.Color = Color.DarkGreen;
-                builder.Description = $"The current market price of {ticker} is {response.Data}";
+                builder.Description = $"The current market price of {ticker.ToUpper()} is {response.Data}";
+                builder.Timestamp = DateTimeOffset.Now;
             }
             else
             {
-                builder.ToError("Couldn't find that stock ticker");
+                builder = builder.ToStockTickerError(ticker);
             }
 
             await ReplyAsync(embed: builder.Build());
@@ -106,7 +108,26 @@ namespace Stonkbot.Modules
         [Summary("Gets the stock quote of a stock with a stock ticker.")]
         public async Task QuoteCommand([Remainder] string ticker)
         {
+            var response = await _cloudClient.StockPrices.QuoteAsync(ticker);
 
+            var builder = new EmbedBuilder();
+
+            if (response.ErrorMessage == null)
+            {
+                builder.Title = $"Stock Quotes for {ticker}";
+                builder.Color = Color.DarkGreen;
+                builder.AddField("Extended Price", response.Data.extendedPrice);
+                builder.AddField("Change", response.Data.change, true);
+                builder.AddField("Change %", response.Data.changePercent, true);
+                builder.AddField("Volume", response.Data.avgTotalVolume, true);
+                builder.Timestamp = DateTimeOffset.Now;
+            }
+            else
+            {
+                builder = builder.ToStockTickerError(ticker);
+            }
+
+            await ReplyAsync(embed: builder.Build());
         }
     }
 }
