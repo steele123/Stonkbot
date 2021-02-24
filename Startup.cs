@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using IEXSharp;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Stonkbot.Services;
@@ -54,6 +55,10 @@ namespace Stonkbot
                     LogLevel = LogSeverity.Verbose,
                     DefaultRunMode = RunMode.Async
                 }))
+                .AddSingleton(new IEXCloudClient(config["tokens:iex:token"],
+                    config["tokens:iex:secret"],
+                    signRequest: false,
+                    useSandBox: false))
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<StartupService>()
                 .AddSingleton<LoggingService>()

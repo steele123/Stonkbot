@@ -13,7 +13,7 @@ namespace Stonkbot.Services
         private readonly CommandService _commands;
 
         private string _logPath { get; }
-        private string _logFile => Path.Combine(_logPath, $"{DateTime.UtcNow.ToString("yyyy-MM-dd")}.txt");
+        private string _logFile => Path.Combine(_logPath, $"{DateTime.UtcNow:yyyy-MM-dd}.txt");
 
         public LoggingService(DiscordSocketClient client, CommandService commands)
         {

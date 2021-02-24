@@ -6,19 +6,19 @@ using Microsoft.Extensions.Configuration;
 
 namespace Stonkbot.Modules
 {
-    public class HelpModule : ModuleBase<SocketCommandContext>
+    public class Help : ModuleBase<SocketCommandContext>
     {
         private readonly CommandService _service;
         private readonly IConfigurationRoot _config;
 
-        public HelpModule(CommandService service, IConfigurationRoot config)
+        public Help(CommandService service, IConfigurationRoot config)
         {
             _service = service;
             _config = config;
         }
 
         [Command("help")]
-        public async Task Help()
+        public async Task HelpCommand()
         {
             string prefix = _config["prefix"];
             var builder = new EmbedBuilder()
