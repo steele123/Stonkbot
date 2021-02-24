@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
+using Stonkbot.Extensions;
 
 namespace Stonkbot.Services
 {
@@ -42,7 +43,7 @@ namespace Stonkbot.Services
                 var result = await _commands.ExecuteAsync(context, argPos, _provider);
 
                 if (!result.IsSuccess)
-                    await context.Channel.SendMessageAsync(result.ToString());
+                    await context.Channel.SendMessageAsync(embed: EmbedUtils.ErrorEmbed("You did not use that command properly"));
             }
         }
     }

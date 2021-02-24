@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using IEXSharp;
 using Microsoft.Extensions.Configuration;
@@ -33,10 +34,15 @@ namespace Stonkbot.Modules
         [Command("portfolio")]
         public async Task PortfolioCommand()
         {
-            MongoClient client = new MongoClient(_config["mongodb"]);
-            var database = client.GetDatabase("production");
-            var collection = database.GetCollection<User>("users");
-            await collection.InsertOneAsync(new User { id = Context.User.Id });
+            EmbedBuilder builder = new EmbedBuilder {Title = "Your Portfolio"};
+
+            var user = await _manager.FindUser(Context.User.Id);
+            if (user == null)
+            {
+                await ReplyAsync(embed: builder.ToErrorEmbed("Couldn't find a portfolio for your account"));
+            }
+
+
         }
 
         [Command("purchase")]
@@ -47,7 +53,7 @@ namespace Stonkbot.Modules
 
             if (response == null)
             {
-                await ReplyAsync($"Could not find the stock ticker '{ticker}'!");
+                await ReplyAsync(embed: EmbedUtils.ErrorEmbed($"Could not find the stock ticker '{ticker}'!"));
                 return;
             }
 
@@ -55,7 +61,8 @@ namespace Stonkbot.Modules
 
             if (user.money < quantity * response.Data)
             {
-                await ReplyAsync($"You don't have enough money to purchase {quantity} shares of {ticker.ToUpper()}.");
+                await ReplyAsync(embed: EmbedUtils.ErrorEmbed(
+                    $"You don't have enough money to purchase {quantity} shares of {ticker.ToUpper()}."));
             }
             else
             {
@@ -72,10 +79,20 @@ namespace Stonkbot.Modules
         {
             var response = await _cloudClient.StockPrices.PriceAsync(ticker);
 
+            var builder = new EmbedBuilder();
+
             if (response != null)
             {
-                await ReplyAsync(response.Data.ToString(CultureInfo.InvariantCulture));
+                builder.Title = "";
+                builder.Color = Color.DarkGreen;
+                builder.Description = $"The current market price of {ticker} is {response.Data}";
             }
+            else
+            {
+                builder.ToError("Couldn't find that stock ticker");
+            }
+
+            await ReplyAsync(embed: builder.Build());
         }
 
         [Command("sell")]
