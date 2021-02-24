@@ -29,7 +29,7 @@ namespace Stonkbot.Services
 
         public async Task StartAsync()
         {
-            string token = _config["tokens:discord"];
+            string token = _config["token"];
             if (string.IsNullOrWhiteSpace(token))
                 throw new Exception("Couldn't find your token in the 'config.json' file");
 

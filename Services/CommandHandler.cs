@@ -23,6 +23,8 @@ namespace Stonkbot.Services
             _commands = commands;
             _config = config;
             _provider = provider;
+
+            client.MessageReceived += OnMessageReceivedAsync;
         }
 
         private async Task OnMessageReceivedAsync(SocketMessage s)

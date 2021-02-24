@@ -29,11 +29,13 @@ namespace Stonkbot.Services
         {
             if (!Directory.Exists(_logPath))
                 Directory.CreateDirectory(_logPath);
-            if(!File.Exists(_logFile))
+            if (!File.Exists(_logFile))
                 File.Create(_logFile).Dispose();
 
             string log = $"{DateTime.UtcNow:hh:mm:ss} [{message.Severity}] {message.Source}: {message.Exception?.ToString() ?? message.Message}";
-            File.AppendAllText(_logFile, log + "\n");
+            
+            // TODO: Implement file logger with mutex or something
+            //File.AppendAllText(_logFile, log + "\n");
 
             return Console.Out.WriteLineAsync(log);
         }
