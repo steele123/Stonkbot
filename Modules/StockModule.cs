@@ -123,9 +123,9 @@ namespace Stonkbot.Modules
                 return;
             }
 
-            var stock = new Stock {ticker = ticker};
+            var stock = user.stocks.FindTicker(ticker);
 
-            if (!user.stocks.Contains(stock))
+            if (stock == null)
             {
                 builder = builder.ToError($"You do not have enough shares of '{ticker}'");
             }
@@ -161,6 +161,37 @@ namespace Stonkbot.Modules
             else
             {
                 builder = builder.ToStockTickerError(ticker);
+            }
+
+            await ReplyAsync(embed: builder.Build());
+        }
+
+        [Command("shares")]
+        [Summary("Gets the shares you currently own in a stock.")]
+        public async Task SharesCommand([Remainder] string ticker)
+        {
+            ticker = ticker.ToUpper();
+
+            var user = await _manager.FindUserAndCreate(Context.User.Id);
+
+            var builder = new EmbedBuilder();
+            
+            if (user.stocks != null)
+            {
+                var stock = user.stocks.FindTicker(ticker);
+                if (stock == null)
+                {
+                    builder = builder.ToError($"You don't have any shares for '{ticker}'.");
+                }
+                else
+                {
+                    builder.Description = $"You currently have {stock.quantity} shares of {stock.ticker}!";
+                    builder.Color = Color.DarkGreen;
+                }
+            }
+            else
+            {
+                builder = builder.ToError($"You don't have any shares for '{ticker}'.");
             }
 
             await ReplyAsync(embed: builder.Build());
